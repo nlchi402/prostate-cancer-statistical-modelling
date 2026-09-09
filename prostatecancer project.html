@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Chi Linh Nguyen">
+
+<title>Clinical Predictors of PSA: Statistical Modelling and Model Selection in R</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="prostatecancer project_files/libs/clipboard/clipboard.min.js"></script>
+<script src="prostatecancer project_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="prostatecancer project_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="prostatecancer project_files/libs/quarto-html/popper.min.js"></script>
+<script src="prostatecancer project_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="prostatecancer project_files/libs/quarto-html/anchor.min.js"></script>
+<link href="prostatecancer project_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="prostatecancer project_files/libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="prostatecancer project_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="prostatecancer project_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="prostatecancer project_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#project-aim" id="toc-project-aim" class="nav-link active" data-scroll-target="#project-aim"><span class="header-section-number">0.1</span> Project aim</a></li>
+  <li><a href="#understand-and-prepare-the-data" id="toc-understand-and-prepare-the-data" class="nav-link" data-scroll-target="#understand-and-prepare-the-data"><span class="header-section-number">1</span> Understand and prepare the data</a></li>
+  <li><a href="#exploratory-data-analysis" id="toc-exploratory-data-analysis" class="nav-link" data-scroll-target="#exploratory-data-analysis"><span class="header-section-number">2</span> Exploratory data analysis</a>
+  <ul class="collapse">
+  <li><a href="#distribution-of-log-psa" id="toc-distribution-of-log-psa" class="nav-link" data-scroll-target="#distribution-of-log-psa"><span class="header-section-number">2.1</span> Distribution of log PSA</a></li>
+  <li><a href="#cancer-volume-and-log-psa" id="toc-cancer-volume-and-log-psa" class="nav-link" data-scroll-target="#cancer-volume-and-log-psa"><span class="header-section-number">2.2</span> Cancer volume and log PSA</a></li>
+  <li><a href="#prostate-weight-and-log-psa" id="toc-prostate-weight-and-log-psa" class="nav-link" data-scroll-target="#prostate-weight-and-log-psa"><span class="header-section-number">2.3</span> Prostate weight and log PSA</a></li>
+  <li><a href="#log-psa-by-seminal-vesicle-invasion-status" id="toc-log-psa-by-seminal-vesicle-invasion-status" class="nav-link" data-scroll-target="#log-psa-by-seminal-vesicle-invasion-status"><span class="header-section-number">2.4</span> Log PSA by seminal vesicle invasion status</a></li>
+  </ul></li>
+  <li><a href="#correlation-and-multicollinearity" id="toc-correlation-and-multicollinearity" class="nav-link" data-scroll-target="#correlation-and-multicollinearity"><span class="header-section-number">3</span> Correlation and multicollinearity</a></li>
+  <li><a href="#fit-the-full-multiple-linear-regression" id="toc-fit-the-full-multiple-linear-regression" class="nav-link" data-scroll-target="#fit-the-full-multiple-linear-regression"><span class="header-section-number">4</span> Fit the full multiple linear regression</a></li>
+  <li><a href="#check-regression-assumptions-and-influential-observations" id="toc-check-regression-assumptions-and-influential-observations" class="nav-link" data-scroll-target="#check-regression-assumptions-and-influential-observations"><span class="header-section-number">5</span> Check regression assumptions and influential observations</a></li>
+  <li><a href="#compare-the-full-and-reduced-models" id="toc-compare-the-full-and-reduced-models" class="nav-link" data-scroll-target="#compare-the-full-and-reduced-models"><span class="header-section-number">6</span> Compare the full and reduced models</a>
+  <ul class="collapse">
+  <li><a href="#reduced-model" id="toc-reduced-model" class="nav-link" data-scroll-target="#reduced-model"><span class="header-section-number">6.1</span> Reduced model</a></li>
+  <li><a href="#nested-f-test" id="toc-nested-f-test" class="nav-link" data-scroll-target="#nested-f-test"><span class="header-section-number">6.2</span> Nested F-test</a></li>
+  <li><a href="#aic-and-bic" id="toc-aic-and-bic" class="nav-link" data-scroll-target="#aic-and-bic"><span class="header-section-number">6.3</span> AIC and BIC</a></li>
+  </ul></li>
+  <li><a href="#evaluate-generalisation-with-holdout-data-and-cross-validation" id="toc-evaluate-generalisation-with-holdout-data-and-cross-validation" class="nav-link" data-scroll-target="#evaluate-generalisation-with-holdout-data-and-cross-validation"><span class="header-section-number">7</span> Evaluate generalisation with holdout data and cross-validation</a>
+  <ul class="collapse">
+  <li><a href="#performance-on-the-predefined-test-set" id="toc-performance-on-the-predefined-test-set" class="nav-link" data-scroll-target="#performance-on-the-predefined-test-set"><span class="header-section-number">7.1</span> Performance on the predefined test set</a></li>
+  <li><a href="#ten-fold-cross-validation-on-the-training-data" id="toc-ten-fold-cross-validation-on-the-training-data" class="nav-link" data-scroll-target="#ten-fold-cross-validation-on-the-training-data"><span class="header-section-number">7.2</span> Ten-fold cross-validation on the training data</a></li>
+  </ul></li>
+  <li><a href="#sensitivity-analysis-numeric-versus-dummy-coded-gleason-score" id="toc-sensitivity-analysis-numeric-versus-dummy-coded-gleason-score" class="nav-link" data-scroll-target="#sensitivity-analysis-numeric-versus-dummy-coded-gleason-score"><span class="header-section-number">8</span> Sensitivity analysis: Numeric versus dummy-coded Gleason score</a></li>
+  <li><a href="#final-discussion-and-limitations" id="toc-final-discussion-and-limitations" class="nav-link" data-scroll-target="#final-discussion-and-limitations"><span class="header-section-number">9</span> Final discussion and limitations</a>
+  <ul class="collapse">
+  <li><a href="#main-findings" id="toc-main-findings" class="nav-link" data-scroll-target="#main-findings"><span class="header-section-number">9.1</span> Main findings</a></li>
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations"><span class="header-section-number">9.2</span> Limitations</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion"><span class="header-section-number">9.3</span> Conclusion</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Clinical Predictors of PSA: Statistical Modelling and Model Selection in R</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Chi Linh Nguyen </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="project-aim" class="level2" data-number="0.1">
+<h2 data-number="0.1" class="anchored" data-anchor-id="project-aim"><span class="header-section-number">0.1</span> Project aim</h2>
+<p>This project investigates how a set of clinical measurements relate to log prostate-specific antigen (<code>lpsa</code>) and how different model-building choices affect predictive performance.</p>
+<p>The analysis is deliberately focused on data analysis and statistical modelling, rather than making clinical claims. The dataset is small, observational, and historical, so results are interpreted as statistical associations within this sample rather than causal or current clinical conclusions.</p>
+<p>The question is:</p>
+<blockquote class="blockquote">
+<p><strong>Which variables are most informative for log PSA, and how does model complexity affect performance on unseen data?</strong></p>
+</blockquote>
+</section>
+<section id="understand-and-prepare-the-data" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Understand and prepare the data</h1>
+<p>The dataset contains the following variables:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+<th>Role in main analysis</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>lcavol</code></td>
+<td>Log cancer volume</td>
+<td>Predictor</td>
+</tr>
+<tr class="even">
+<td><code>lweight</code></td>
+<td>Log prostate weight</td>
+<td>Predictor</td>
+</tr>
+<tr class="odd">
+<td><code>age</code></td>
+<td>Age</td>
+<td>Predictor</td>
+</tr>
+<tr class="even">
+<td><code>lbph</code></td>
+<td>Log amount of benign prostatic hyperplasia</td>
+<td>Predictor</td>
+</tr>
+<tr class="odd">
+<td><code>svi</code></td>
+<td>Seminal vesicle invasion indicator: 0/1</td>
+<td>Predictor</td>
+</tr>
+<tr class="even">
+<td><code>lcp</code></td>
+<td>Log capsular penetration</td>
+<td>Predictor</td>
+</tr>
+<tr class="odd">
+<td><code>gleason</code></td>
+<td>Gleason score</td>
+<td>Predictor</td>
+</tr>
+<tr class="even">
+<td><code>pgg45</code></td>
+<td>Percentage of Gleason patterns 4 or 5</td>
+<td>Predictor</td>
+</tr>
+<tr class="odd">
+<td><code>lpsa</code></td>
+<td>Log PSA</td>
+<td>Main continuous outcome</td>
+</tr>
+<tr class="even">
+<td><code>train</code></td>
+<td>Predefined training/test indicator</td>
+<td>Data split</td>
+</tr>
+</tbody>
+</table>
+<p>The first checks are limited to what is necessary before modelling: dimensions, variable types, missingness, and the predefined split.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(prostate)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 97 10</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(prostate)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 97
+Columns: 10
+$ lcavol  &lt;dbl&gt; -0.5798185, -0.9942523, -0.5108256, -1.2039728, 0.7514161, -1.…
+$ lweight &lt;dbl&gt; 2.769459, 3.319626, 2.691243, 3.282789, 3.432373, 3.228826, 3.…
+$ age     &lt;dbl&gt; 50, 58, 74, 58, 62, 50, 64, 58, 47, 63, 65, 63, 63, 67, 57, 66…
+$ lbph    &lt;dbl&gt; -1.3862944, -1.3862944, -1.3862944, -1.3862944, -1.3862944, -1…
+$ svi     &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+$ lcp     &lt;dbl&gt; -1.3862944, -1.3862944, -1.3862944, -1.3862944, -1.3862944, -1…
+$ gleason &lt;dbl&gt; 6, 6, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 6, 7, 6, 6, 6, 6,…
+$ pgg45   &lt;dbl&gt; 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 5, 5, 0, 30, 0, 0, 0,…
+$ lpsa    &lt;dbl&gt; -0.4307829, -0.1625189, -0.1625189, -0.1625189, 0.3715636, 0.7…
+$ train   &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE,…</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colSums</span>(<span class="fu">is.na</span>(prostate))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> lcavol lweight     age    lbph     svi     lcp gleason   pgg45    lpsa   train 
+      0       0       0       0       0       0       0       0       0       0 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>(prostate, train)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 2
+  train     n
+  &lt;lgl&gt; &lt;int&gt;
+1 FALSE    30
+2 TRUE     67</code></pre>
+</div>
+</div>
+<p>The dataset contains 97 observations and 10 variables. There are 67 training observations and 30 test observations.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>train_data <span class="ot">&lt;-</span> prostate <span class="sc">|&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(train) <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>train)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>test_data <span class="ot">&lt;-</span> prostate <span class="sc">|&gt;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>train) <span class="sc">|&gt;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>train)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The test set is kept separate from model fitting and used only for evaluation.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>(prostate, svi)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 2
+    svi     n
+  &lt;dbl&gt; &lt;int&gt;
+1     0    76
+2     1    21</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>(prostate, gleason)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 2
+  gleason     n
+    &lt;dbl&gt; &lt;int&gt;
+1       6    35
+2       7    56
+3       8     1
+4       9     5</code></pre>
+</div>
+</div>
+<p><br>
+<code>svi</code> is imbalanced: most observations are 0. <code>gleason</code> is also unevenly distributed, with very few observations at the highest levels. This matters later because models using several <code>gleason</code> dummy variables may estimate those rare categories imprecisely.</p>
+</section>
+<section id="exploratory-data-analysis" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Exploratory data analysis</h1>
+<section id="distribution-of-log-psa" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="distribution-of-log-psa"><span class="header-section-number">2.1</span> Distribution of log PSA</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(train_data, <span class="fu">aes</span>(<span class="at">x =</span> lpsa)) <span class="sc">+</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">15</span>) <span class="sc">+</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Distribution of log PSA in the training data"</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Log PSA"</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Count"</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="prostatecancer-project_files/figure-html/lpsa-distribution-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><br>
+The <code>lpsa</code> values are fairly spread out and the distribution is roughly balanced, with no obvious extreme values. The suitability of the linear model is assessed later using the regression diagnostic plots.</p>
+</section>
+<section id="cancer-volume-and-log-psa" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="cancer-volume-and-log-psa"><span class="header-section-number">2.2</span> Cancer volume and log PSA</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(train_data, <span class="fu">aes</span>(<span class="at">x =</span> lcavol, <span class="at">y =</span> lpsa)) <span class="sc">+</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Log cancer volume and log PSA"</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Log cancer volume"</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Log PSA"</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="prostatecancer-project_files/figure-html/lcavol-lpsa-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><br>
+There is a clear positive relationship between <code>lcavol</code> and <code>lpsa</code>: patients with higher log cancer volume generally have higher log PSA. The relationship is fairly strong in the training data (r = 0.73), although there is still some variation around the fitted line.</p>
+</section>
+<section id="prostate-weight-and-log-psa" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="prostate-weight-and-log-psa"><span class="header-section-number">2.3</span> Prostate weight and log PSA</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(train_data, <span class="fu">aes</span>(<span class="at">x =</span> lweight, <span class="at">y =</span> lpsa)) <span class="sc">+</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Log prostate weight and log PSA"</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Log prostate weight"</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Log PSA"</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="prostatecancer-project_files/figure-html/lweight-lpsa-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><br>
+<code>lweight</code> also has a positive relationship with <code>lpsa</code>, but the points are more scattered than for <code>lcavol</code>. The correlation is about r = 0.49, suggesting a moderate relationship rather than a very strong one.</p>
+</section>
+<section id="log-psa-by-seminal-vesicle-invasion-status" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="log-psa-by-seminal-vesicle-invasion-status"><span class="header-section-number">2.4</span> Log PSA by seminal vesicle invasion status</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(train_data, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">factor</span>(svi), <span class="at">y =</span> lpsa)) <span class="sc">+</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Log PSA by SVI status"</span>,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"SVI status"</span>,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Log PSA"</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="prostatecancer-project_files/figure-html/svi-lpsa-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><br>
+The <code>svi = 1</code> group has noticeably higher log PSA values than the <code>svi = 0</code> group. In the training data, the median <code>lpsa</code> is about 3.63 for <code>svi = 1</code> compared with 2.17 for <code>svi = 0</code>. This is only a descriptive comparison, so the regression model is still needed to see whether <code>svi</code> adds information after the other predictors are included.</p>
+</section>
+</section>
+<section id="correlation-and-multicollinearity" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Correlation and multicollinearity</h1>
+<p>Some predictors are related to similar clinical characteristics, so it is not surprising that they are correlated. The main concern is whether this makes it harder to estimate each predictor’s individual effect.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>predictor_cor <span class="ot">&lt;-</span> train_data <span class="sc">|&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>lpsa) <span class="sc">|&gt;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>()</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(predictor_cor, <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        lcavol lweight  age  lbph   svi   lcp gleason pgg45
+lcavol    1.00    0.30 0.29  0.06  0.59  0.69    0.43  0.48
+lweight   0.30    1.00 0.32  0.44  0.18  0.16    0.02  0.07
+age       0.29    0.32 1.00  0.29  0.13  0.17    0.37  0.28
+lbph      0.06    0.44 0.29  1.00 -0.14 -0.09    0.03 -0.03
+svi       0.59    0.18 0.13 -0.14  1.00  0.67    0.31  0.48
+lcp       0.69    0.16 0.17 -0.09  0.67  1.00    0.48  0.66
+gleason   0.43    0.02 0.37  0.03  0.31  0.48    1.00  0.76
+pgg45     0.48    0.07 0.28 -0.03  0.48  0.66    0.76  1.00</code></pre>
+</div>
+</div>
+<p>The strongest relationships in the supplied training data include approximately:</p>
+<ul>
+<li><code>gleason</code> with <code>pgg45</code>: r = 0.76</li>
+<li><code>lcavol</code> with <code>lcp</code>: r = 0.69</li>
+<li><code>lcp</code> with <code>svi</code>: r = 0.67</li>
+</ul>
+<p>Because some predictors are strongly correlated, their individual effects may be harder to separate in the regression model.</p>
+<p>We can quantify that overlap using variance inflation factors.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>full_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  lpsa <span class="sc">~</span> lcavol <span class="sc">+</span> lweight <span class="sc">+</span> age <span class="sc">+</span> lbph <span class="sc">+</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    svi <span class="sc">+</span> lcp <span class="sc">+</span> gleason <span class="sc">+</span> pgg45,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> train_data</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>vif_table <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">predictor =</span> <span class="fu">names</span>(car<span class="sc">::</span><span class="fu">vif</span>(full_model)),</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">VIF =</span> <span class="fu">as.numeric</span>(car<span class="sc">::</span><span class="fu">vif</span>(full_model))</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(VIF))</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>vif_table</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 8 × 2
+  predictor   VIF
+  &lt;chr&gt;     &lt;dbl&gt;
+1 pgg45      3.31
+2 lcp        3.12
+3 gleason    2.64
+4 lcavol     2.32
+5 svi        2.05
+6 lweight    1.47
+7 lbph       1.38
+8 age        1.36</code></pre>
+</div>
+</div>
+<p>The highest VIF values are about 3.31 for <code>pgg45</code> and 3.12 for <code>lcp</code>. This shows that some predictors overlap, but none of the VIF values are extremely high. Multicollinearity is therefore worth keeping in mind when interpreting individual coefficients, rather than being a reason to reject the model.</p>
+</section>
+<section id="fit-the-full-multiple-linear-regression" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Fit the full multiple linear regression</h1>
+<p>The full model uses all eight predictors to estimate <code>lpsa</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(full_model, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 9 × 7
+  term        estimate std.error statistic    p.value conf.low conf.high
+  &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+1 (Intercept)  0.429     1.55        0.276 0.783      -2.68      3.54   
+2 lcavol       0.577     0.107       5.37  0.00000147  0.361     0.792  
+3 lweight      0.614     0.223       2.75  0.00792     0.167     1.06   
+4 age         -0.0190    0.0136     -1.40  0.168      -0.0462    0.00825
+5 lbph         0.145     0.0705      2.06  0.0443      0.00381   0.286  
+6 svi          0.737     0.299       2.47  0.0165      0.140     1.33   
+7 lcp         -0.206     0.111      -1.87  0.0670     -0.428     0.0149 
+8 gleason     -0.0295    0.201      -0.147 0.884      -0.432     0.373  
+9 pgg45        0.00947   0.00545     1.74  0.0875     -0.00144   0.0204 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glance</span>(full_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 12
+  r.squared adj.r.squared sigma statistic  p.value    df logLik   AIC   BIC
+      &lt;dbl&gt;         &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1     0.694         0.652 0.712      16.5 2.04e-12     8  -67.5  155.  177.
+# ℹ 3 more variables: deviance &lt;dbl&gt;, df.residual &lt;int&gt;, nobs &lt;int&gt;</code></pre>
+</div>
+</div>
+<p>The model explains about 69.4% of the variation in <code>lpsa</code> in the training data, with an adjusted R² of 0.652.</p>
+<p><code>lcavol</code> is the clearest predictor in the full model (estimate = 0.58, p &lt; 0.001). <code>lweight</code>, <code>lbph</code>, and <code>svi</code> are also significant at the 5% level. In contrast, <code>age</code>, <code>gleason</code>, <code>lcp</code>, and <code>pgg45</code> do not show clear additional effects once the other predictors are included.</p>
+<p>The result for <code>gleason</code> is a useful example of why the correlation analysis matters. It may contain useful information on its own, but it is strongly related to <code>pgg45</code> and other predictors, so the model has more difficulty separating its individual contribution. These coefficients are interpreted as associations within this dataset, not causal effects.</p>
+</section>
+<section id="check-regression-assumptions-and-influential-observations" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Check regression assumptions and influential observations</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(full_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="prostatecancer-project_files/figure-html/regression-diagnostics-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The residual plots do not show a strong curved pattern or a clear funnel shape, and the Q-Q plot is reasonably close to a straight line. Overall, there is no obvious diagnostic problem that would make the linear model unusable, although a few observations stand out more than the rest.</p>
+<p>Cook’s distance provides a simple screen for influential observations.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>influence_table <span class="ot">&lt;-</span> <span class="fu">augment</span>(full_model) <span class="sc">|&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">observation =</span> <span class="fu">row_number</span>(),</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">cook_threshold =</span> <span class="dv">4</span> <span class="sc">/</span> <span class="fu">nrow</span>(train_data)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.cooksd <span class="sc">&gt;</span> cook_threshold) <span class="sc">|&gt;</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(.cooksd)) <span class="sc">|&gt;</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(observation, .cooksd, .hat, .std.resid)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>influence_table</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 4
+  observation .cooksd  .hat .std.resid
+        &lt;int&gt;   &lt;dbl&gt; &lt;dbl&gt;      &lt;dbl&gt;
+1          34  0.212  0.240      -2.46
+2          45  0.148  0.197       2.33
+3          28  0.0825 0.110      -2.45
+4          67  0.0675 0.159       1.79
+5          27  0.0650 0.143       1.87</code></pre>
+</div>
+</div>
+<p>Five observations are above the <code>4/n</code> Cook’s distance screening threshold. Observations 34 and 45 have the largest Cook’s distances, at about 0.21 and 0.15. They may have more influence on the fitted model than most observations, but there is no reason from this check alone to remove them, so they are kept in the analysis.</p>
+</section>
+<section id="compare-the-full-and-reduced-models" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Compare the full and reduced models</h1>
+<section id="reduced-model" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="reduced-model"><span class="header-section-number">6.1</span> Reduced model</h2>
+<p>Based on the full model results, a reduced model is fitted using the four predictors that show the clearest evidence of association with lpsa: lcavol, lweight, lbph, and svi.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>reduced_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  lpsa <span class="sc">~</span> lcavol <span class="sc">+</span> lweight <span class="sc">+</span> lbph <span class="sc">+</span> svi,</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> train_data</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="nested-f-test" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="nested-f-test"><span class="header-section-number">6.2</span> Nested F-test</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(reduced_model, full_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Analysis of Variance Table
+
+Model 1: lpsa ~ lcavol + lweight + lbph + svi
+Model 2: lpsa ~ lcavol + lweight + age + lbph + svi + lcp + gleason + 
+    pgg45
+  Res.Df    RSS Df Sum of Sq      F Pr(&gt;F)
+1     62 32.815                           
+2     58 29.426  4    3.3886 1.6698 0.1693</code></pre>
+</div>
+</div>
+<p><br>
+The nested F-test gives a p-value of about 0.17. This means there is not enough evidence that adding <code>age</code>, <code>lcp</code>, <code>gleason</code>, and <code>pgg45</code> as a group improves the four-predictor model at the 5% level. Based on this test, the simpler model with <code>lcavol</code>, <code>lweight</code>, <code>lbph</code>, and <code>svi</code> is reasonable.</p>
+</section>
+<section id="aic-and-bic" class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="aic-and-bic"><span class="header-section-number">6.3</span> AIC and BIC</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(full_model, reduced_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              df      AIC
+full_model    10 155.0101
+reduced_model  6 154.3127</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">BIC</span>(full_model, reduced_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              df      BIC
+full_model    10 177.0570
+reduced_model  6 167.5408</code></pre>
+</div>
+</div>
+<p><br>
+The reduced model has a slightly lower AIC than the full model (154.31 vs 155.01), so AIC only gives a small preference to the simpler model. The BIC difference is much larger (167.54 vs 177.06), giving stronger support to the reduced model. This suggests that the extra predictors do not improve the fit enough to clearly justify the added complexity.</p>
+</section>
+</section>
+<section id="evaluate-generalisation-with-holdout-data-and-cross-validation" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Evaluate generalisation with holdout data and cross-validation</h1>
+<section id="performance-on-the-predefined-test-set" class="level2" data-number="7.1">
+<h2 data-number="7.1" class="anchored" data-anchor-id="performance-on-the-predefined-test-set"><span class="header-section-number">7.1</span> Performance on the predefined test set</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>mse <span class="ot">&lt;-</span> <span class="cf">function</span>(model, newdata) {</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>((newdata<span class="sc">$</span>lpsa <span class="sc">-</span> <span class="fu">predict</span>(model, <span class="at">newdata =</span> newdata))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>candidate_models <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">Full =</span> full_model,</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">Reduced =</span> reduced_model</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>holdout_results <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">names</span>(candidate_models),</span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">train_MSE =</span> <span class="fu">map_dbl</span>(candidate_models, <span class="sc">~</span> <span class="fu">mse</span>(.x, train_data)),</span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">test_MSE =</span> <span class="fu">map_dbl</span>(candidate_models, <span class="sc">~</span> <span class="fu">mse</span>(.x, test_data))</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(test_MSE)</span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>holdout_results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 3
+  model   train_MSE test_MSE
+  &lt;chr&gt;       &lt;dbl&gt;    &lt;dbl&gt;
+1 Reduced     0.490    0.456
+2 Full        0.439    0.521</code></pre>
+</div>
+</div>
+<p>The reduced model has a lower test MSE than the full model (0.456 vs 0.521), even though the full model has a lower training MSE (0.439 vs 0.490). This suggests that the additional predictors improve the fit to the training data but do not improve performance on the holdout test set.</p>
+</section>
+<section id="ten-fold-cross-validation-on-the-training-data" class="level2" data-number="7.2">
+<h2 data-number="7.2" class="anchored" data-anchor-id="ten-fold-cross-validation-on-the-training-data"><span class="header-section-number">7.2</span> Ten-fold cross-validation on the training data</h2>
+<p>A single 30-observation test set can give a noisy ranking. Ten-fold cross-validation gives a second view by repeatedly fitting each fixed candidate formula on different subsets of the 67 training observations.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>candidate_formulas <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Full =</span> <span class="fu">formula</span>(full_model),</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Reduced =</span> <span class="fu">formula</span>(reduced_model)</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>folds <span class="ot">&lt;-</span> <span class="fu">vfold_cv</span>(train_data, <span class="at">v =</span> <span class="dv">10</span>)</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>fold_mse <span class="ot">&lt;-</span> <span class="cf">function</span>(split, model_formula) {</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  analysis_data <span class="ot">&lt;-</span> <span class="fu">analysis</span>(split)</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>  assessment_data <span class="ot">&lt;-</span> <span class="fu">assessment</span>(split)</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>  fitted_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(model_formula, <span class="at">data =</span> analysis_data)</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>  predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(fitted_model, <span class="at">newdata =</span> assessment_data)</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>((assessment_data<span class="sc">$</span>lpsa <span class="sc">-</span> predictions)<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>cv_fold_results <span class="ot">&lt;-</span> <span class="fu">imap_dfr</span>(</span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>  candidate_formulas,</span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(model_formula, model_name) {</span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(</span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">model =</span> model_name,</span>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a>      <span class="at">fold =</span> <span class="fu">seq_along</span>(folds<span class="sc">$</span>splits),</span>
+<span id="cb39-25"><a href="#cb39-25" aria-hidden="true" tabindex="-1"></a>      <span class="at">MSE =</span> <span class="fu">map_dbl</span>(</span>
+<span id="cb39-26"><a href="#cb39-26" aria-hidden="true" tabindex="-1"></a>        folds<span class="sc">$</span>splits,</span>
+<span id="cb39-27"><a href="#cb39-27" aria-hidden="true" tabindex="-1"></a>        <span class="sc">~</span> <span class="fu">fold_mse</span>(.x, model_formula)</span>
+<span id="cb39-28"><a href="#cb39-28" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb39-29"><a href="#cb39-29" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb39-30"><a href="#cb39-30" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb39-31"><a href="#cb39-31" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb39-32"><a href="#cb39-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-33"><a href="#cb39-33" aria-hidden="true" tabindex="-1"></a>cv_summary <span class="ot">&lt;-</span> cv_fold_results <span class="sc">|&gt;</span></span>
+<span id="cb39-34"><a href="#cb39-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(model) <span class="sc">|&gt;</span></span>
+<span id="cb39-35"><a href="#cb39-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb39-36"><a href="#cb39-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_CV_MSE =</span> <span class="fu">mean</span>(MSE),</span>
+<span id="cb39-37"><a href="#cb39-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd_CV_MSE =</span> <span class="fu">sd</span>(MSE),</span>
+<span id="cb39-38"><a href="#cb39-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb39-39"><a href="#cb39-39" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb39-40"><a href="#cb39-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(mean_CV_MSE)</span>
+<span id="cb39-41"><a href="#cb39-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-42"><a href="#cb39-42" aria-hidden="true" tabindex="-1"></a>cv_summary</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 3
+  model   mean_CV_MSE sd_CV_MSE
+  &lt;chr&gt;         &lt;dbl&gt;     &lt;dbl&gt;
+1 Full          0.599     0.400
+2 Reduced       0.602     0.348</code></pre>
+</div>
+</div>
+<p>The full model has the lowest mean 10-fold cross-validation MSE at approximately 0.599. The full model performs only slightly better than the reduced model in cross-validation (0.599 vs 0.602). The difference is very small, so there is no clear advantage for either model. Together with the holdout result, this suggests that the extra predictors do not provide a consistent improvement in out-of-sample performance.</p>
+</section>
+</section>
+<section id="sensitivity-analysis-numeric-versus-dummy-coded-gleason-score" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Sensitivity analysis: Numeric versus dummy-coded Gleason score</h1>
+<p>In the full regression model, <code>gleason</code> is treated as a numeric variable. This assumes that moving from Gleason 6 to 7 has the same effect as moving from 7 to 8 or from 8 to 9.</p>
+<p>As a sensitivity check, <code>gleason</code> is also treated as a factor so that each score level can have its own coefficient. This is an exploratory check and does not change the full-versus-reduced model comparison above.</p>
+<p>First, check the number of observations in each Gleason category.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>(train_data, gleason)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 2
+  gleason     n
+    &lt;dbl&gt; &lt;int&gt;
+1       6    25
+2       7    38
+3       8     1
+4       9     3</code></pre>
+</div>
+</div>
+<p>The training data are very uneven across Gleason categories. Because Gleason 8 and 9 have very few observations, their dummy-variable estimates are likely to be unstable.</p>
+<p>To compare the two coding approaches, the same small set of other predictors is used in both models.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>gleason_levels <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(train_data<span class="sc">$</span>gleason))</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>train_gleason <span class="ot">&lt;-</span> train_data <span class="sc">|&gt;</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">gleason_factor =</span> <span class="fu">factor</span>(</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>      gleason,</span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> gleason_levels</span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>numeric_gleason_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>  lpsa <span class="sc">~</span> lcavol <span class="sc">+</span> lweight <span class="sc">+</span> lbph <span class="sc">+</span> svi <span class="sc">+</span> gleason,</span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> train_gleason</span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a>factor_gleason_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb43-17"><a href="#cb43-17" aria-hidden="true" tabindex="-1"></a>  lpsa <span class="sc">~</span> lcavol <span class="sc">+</span> lweight <span class="sc">+</span> lbph <span class="sc">+</span> svi <span class="sc">+</span> gleason_factor,</span>
+<span id="cb43-18"><a href="#cb43-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> train_gleason</span>
+<span id="cb43-19"><a href="#cb43-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb43-20"><a href="#cb43-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-21"><a href="#cb43-21" aria-hidden="true" tabindex="-1"></a>gleason_comparison <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb43-22"><a href="#cb43-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">coding =</span> <span class="fu">c</span>(<span class="st">"Numeric"</span>, <span class="st">"Factor / dummy-coded"</span>),</span>
+<span id="cb43-23"><a href="#cb43-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">AIC =</span> <span class="fu">c</span>(</span>
+<span id="cb43-24"><a href="#cb43-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">AIC</span>(numeric_gleason_model),</span>
+<span id="cb43-25"><a href="#cb43-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">AIC</span>(factor_gleason_model)</span>
+<span id="cb43-26"><a href="#cb43-26" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb43-27"><a href="#cb43-27" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb43-28"><a href="#cb43-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-29"><a href="#cb43-29" aria-hidden="true" tabindex="-1"></a>gleason_comparison</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 2
+  coding                 AIC
+  &lt;chr&gt;                &lt;dbl&gt;
+1 Numeric               156.
+2 Factor / dummy-coded  157.</code></pre>
+</div>
+</div>
+<p>The numeric model has a lower AIC than the dummy-coded model (approximately 156 vs 157). This suggests that allowing separate coefficients for each Gleason category does not improve the training-data fit enough to justify the additional parameters.</p>
+<p>The dummy-coded coefficients can also be inspected directly.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  factor_gleason_model,</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">conf.int =</span> <span class="cn">TRUE</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(term, <span class="st">"gleason_factor"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 7
+  term            estimate std.error statistic p.value conf.low conf.high
+  &lt;chr&gt;              &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+1 gleason_factor7   0.381      0.227    1.68    0.0980  -0.0725     0.834
+2 gleason_factor8   0.0489     0.747    0.0654  0.948   -1.45       1.54 
+3 gleason_factor9   0.0314     0.466    0.0673  0.947   -0.900      0.963</code></pre>
+</div>
+</div>
+<p>For the dummy-coded model, Gleason 6 is the reference group. Gleason 7 has an estimated coefficient of about 0.38, meaning its estimated <code>lpsa</code> is higher than Gleason 6 after controlling for the other predictors. However, the p-value is about 0.098, so the difference is not statistically significant at the 5% level.</p>
+<p>The estimates for Gleason 8 and 9 are close to zero and have very large p-values. These estimates are also highly uncertain because there is only one Gleason 8 observation and three Gleason 9 observations in the training data.</p>
+<p>Overall, the sensitivity analysis does not provide a strong reason to prefer dummy coding. The numeric model has a lower AIC, while the higher Gleason categories are too sparse to estimate reliably. Therefore, if Gleason is included in the model, treating it as numeric appears to be the simpler choice for this dataset.</p>
+</section>
+<section id="final-discussion-and-limitations" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Final discussion and limitations</h1>
+<section id="main-findings" class="level2" data-number="9.1">
+<h2 data-number="9.1" class="anchored" data-anchor-id="main-findings"><span class="header-section-number">9.1</span> Main findings</h2>
+<ol type="1">
+<li><p><code>lcavol</code> shows the clearest and most consistent association with log PSA. <code>lcavol</code> has a strong positive relationship with <code>lpsa</code> in the EDA and remains strongly significant in the full regression (estimate ≈ 0.58, p &lt; 0.001).</p></li>
+<li><p>Some predictors contain overlapping information, but multicollinearity is not severe. The strongest correlations include <code>gleason</code> with <code>pgg45</code> (r ≈ 0.76) and <code>lcavol</code> with <code>lcp</code> (r ≈ 0.69). The highest VIF is about 3.31, so the overlap should be considered when interpreting coefficients but does not appear extreme.</p></li>
+<li><p>The extra predictors in the full model are not clearly justified.<br>
+The nested F-test gives p = 0.169, so there is not enough evidence that adding <code>age</code>, <code>lcp</code>, <code>gleason</code>, and <code>pgg45</code> significantly improves the reduced model. AIC slightly favours the reduced model, while BIC gives stronger support to it.</p></li>
+<li><p>The reduced and full models perform similarly across validation methods. The reduced model performs better on the predefined test set, while the 10-fold cross-validation results are very close between the two models. This suggests that the additional predictors do not give a clear improvement in out-of-sample performance.</p></li>
+<li><p>The Gleason sensitivity analysis does not provide a strong reason to use dummy coding. The numeric model has a lower AIC, while the very small number of Gleason 8 and 9 observations makes the separate category estimates uncertain.</p></li>
+</ol>
+</section>
+<section id="limitations" class="level2" data-number="9.2">
+<h2 data-number="9.2" class="anchored" data-anchor-id="limitations"><span class="header-section-number">9.2</span> Limitations</h2>
+<ul>
+<li>The dataset is small, with 97 observations in total and only 67 used for model fitting.</li>
+<li>Several predictors are correlated.</li>
+<li>Some Gleason categories are extremely sparse.</li>
+<li>The data are observational, so coefficients should be interpreted as associations rather than causal effects.</li>
+<li>According to the supplied exercise context, the data come from a historical single-hospital cohort of patients who underwent radical prostatectomy. Results therefore should not be assumed to generalise directly to different hospitals, patient groups, or modern clinical practice without external validation.</li>
+</ul>
+</section>
+<section id="conclusion" class="level2" data-number="9.3">
+<h2 data-number="9.3" class="anchored" data-anchor-id="conclusion"><span class="header-section-number">9.3</span> Conclusion</h2>
+<p>Overall, <code>lcavol</code> shows the clearest and most consistent association with log PSA in this dataset. The full model fits the training data well, but the nested F-test, AIC and BIC suggest that the extra predictors do not add enough value to justify the added complexity. The validation results also show that model performance is sensitive to how the data are split. Given the small sample size, the reduced model seems to be a reasonable and simpler choice.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
