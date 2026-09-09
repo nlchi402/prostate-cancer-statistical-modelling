@@ -1,13 +1,14 @@
 ---
 title: "Clinical Predictors of PSA: Statistical Modelling and Model Selection in R"
 author: "Chi Linh Nguyen"
+
 format:
   html:
     toc: true
     number-sections: true
-execute:
-  warning: false
-  message: false
+    embed-resources: true
+
+output-file: index.html
 ---
 
 ## Project aim
