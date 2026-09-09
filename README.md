@@ -38,10 +38,10 @@ The project uses a predefined training/test split and includes:
 
 ## Repository files
 
-- `prostate_analysis.qmd` — complete Quarto analysis and interpretation
-- `prostate.csv` — dataset used in the analysis
-- `README.md` — project overview
-- `.gitignore` — standard R/Quarto exclusions
+- `prostate_analysis.qmd` - complete Quarto analysis and interpretation
+- `prostate.csv` - dataset used in the analysis
+- `README.md` - project overview
+- `.gitignore` - standard R/Quarto exclusions
 
 ## Reproduce the analysis
 
